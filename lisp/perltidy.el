@@ -101,8 +101,18 @@
       (if (executable-find perltidy-program)
           (put 'perltidy-program 'has-perltidy t)
         (error "Seem perltidy is not installed")))
-  (perltidy-save-point
-    (call-process-region beg end perltidy-program t t)))
+  ;; set the PERLTIDY environment variable to the closest instance
+  ;; of .perltidyrc, but keep its values if it was set before.
+  ;; adapted from http://www.emacswiki.org/emacs/PerlTidyElisp
+  (let ((old-perltidy-env (getenv "PERLTIDY")))
+    (setenv "PERLTIDY"
+            (or (concat (expand-file-name
+                 (locate-dominating-file (buffer-file-name)
+                                         ".perltidyrc")) ".perltidyrc")
+                old-perltidy-env))
+    (perltidy-save-point
+      (call-process-region beg end perltidy-program t t))
+    (setenv "PERLTIDY" old-perltidy-env)))
 
 ;;;###autoload 
 (defun perltidy-buffer ()
